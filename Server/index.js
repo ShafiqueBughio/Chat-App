@@ -1,43 +1,50 @@
 const express = require("express");
 const cors = require("cors");
-const cookie_parser = require("cookie-parser");
-
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
-//mongodb connection
-const {Connect_MongoDB} = require("./config/MongoDB_Connection")
-//import router
-const {user_router} = require("./Routes/routes");
-const {app,server} = require("./Sockets/index")
 
-// const app = express();
+// MongoDB connection
+const { Connect_MongoDB } = require("./config/MongoDB_Connection");
 
-app.use(cors(
-    {
-        // origin:process.env.FRONTEND_URL,
-        origin:["https://chat-app-frontend-eta-flax.vercel.app"],
-        methods: ["POST","GET","DELETE"],
-        credentials:true,
-    }
-))
+// Import router
+const { user_router } = require("./Routes/routes");
+const { app, server } = require("./Sockets/index");
 
-// app.get("/",(req,res)=>{
-//   res.send("Hello")
-// })
-app.use(express.json()); // To handle JSON requests
+// ✅ Apply CORS Middleware Before Everything Else
+app.use(cors({
+    origin: "https://chat-app-frontend-eta-flax.vercel.app",
+    methods: ["POST", "GET", "DELETE"],
+    credentials: true,
+}));
 
-app.use(cookie_parser());
+// ✅ Explicitly Allow CORS Headers
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "https://chat-app-frontend-eta-flax.vercel.app");
+    res.header("Access-Control-Allow-Methods", "POST, GET, DELETE");
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    next();
+});
 
+// ✅ Handle Preflight Requests (OPTIONS)
+app.options("*", cors());
 
+// ✅ Enable JSON and Cookie Parsing
+app.use(express.json());
+app.use(cookieParser());
+
+// ✅ Apply Routes
 app.use(user_router);
 
+// ✅ MongoDB Connection
+Connect_MongoDB().then(() => {
+    console.log("✅ MongoDB Connected");
+}).catch(err => {
+    console.error("❌ MongoDB Connection Error:", err);
+});
+
+// ✅ Start Server
 const PORT = process.env.PORT || 8080;
-
-//MongoDb Connection
-Connect_MongoDB().then(()=>{
-    console.log("MongoDB Connected");
- 
-})
-
-server.listen(PORT,()=>{
-    console.log(`server started on port :${PORT}`)
-})
+server.listen(PORT, () => {
+    console.log(`🚀 Server started on port: ${PORT}`);
+});
