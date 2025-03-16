@@ -11,6 +11,8 @@ const {Search_User} = require("../Controller/Search_User")
 
 const user_router = express.Router();
 
+user_router.get("/",(req,res)=>{res.json("Hello")})
+
 user_router.post('/email',Check_Email);
 
 user_router.post('/register',Register_User);
