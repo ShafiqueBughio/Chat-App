@@ -14,7 +14,7 @@ const {app,server} = require("./Sockets/index")
 app.use(cors(
     {
         // origin:process.env.FRONTEND_URL,
-        origin:"https://chat-app-frontend-one-chi.vercel.app",
+        origin:"https://chat-app-frontend-eta-flax.vercel.app",
         methods: ["POST","GET"],
         credentials:true,//
     }
