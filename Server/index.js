@@ -14,7 +14,7 @@ const {app,server} = require("./Sockets/index")
 app.use(cors(
     {
         // origin:process.env.FRONTEND_URL,
-        origin:"",
+        origin:"http://localhost:5173",
         methods: ["POST","GET"],
         credentials:true,//
     }
