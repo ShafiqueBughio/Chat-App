@@ -32,12 +32,7 @@ const Home = () => {
   //fetch users
   const fetchUsers = async () => {
     try {
-      const URL = `${url}/user-details`
-
-      const response = await axios({
-        url: URL,
-        withCredentials: true
-      });
+     const response = await axios.get(`${url}/user-details`, { withCredentials: true });
 
       //dispatch to redux store
       dispatch(SetUser(response?.data?.data));
