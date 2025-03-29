@@ -14,8 +14,9 @@ const {app,server} = require("./Sockets/index")
 app.use(cors(
     {
         // origin:process.env.FRONTEND_URL,
-        origin:"https://chat-app-frontend-silk-phi.vercel.app",
-        credentials:true,
+       origin: ["http://localhost:5173", "https://chat-app-frontend-silk-phi.vercel.app"], // Allow both local and deployed frontend
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
     }
 ))
 
