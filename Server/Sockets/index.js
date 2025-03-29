@@ -14,13 +14,6 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 const app = express();
 
-app.use(cors({
-    origin: "https://chat-app-frontend-silk-phi.vercel.app",
-    credentials: true
-}));
-
-app.use(express.json());
-
 //Socket connection 
 
 const server = http.createServer(app);
