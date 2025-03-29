@@ -12,6 +12,7 @@ import ChatColors from './ChatColors';
 import { toggleChatOption } from '../Redux/UserSlice';
 import { useDispatch } from 'react-redux';
 import ClearChat from './ClearChat';
+import { addTypingUser,removeTypingUser } from '../Redux/UserSlice';
 // import Wallpaper from './Wallpaper';
 
 
@@ -31,6 +32,10 @@ const Message_Page = () => {
   const[allMessages,SetallMessages] = useState([]);
 
   const [openOptions,SetOpenOptions] = useState(false);
+
+  const [typing,SetTyping] = useState(false);
+
+  // const [typingUser, setTypingUser] = useState("");
 
   const dispatch = useDispatch();
 
@@ -52,6 +57,8 @@ const Message_Page = () => {
 
    const ClearChat_Choice = useSelector(state=>state?.user?.ClearChat_Choice);
 
+   const Typing = useSelector(state=>state?.user?.typing);
+
 
   useEffect(()=>{
     if(socketConnection){
@@ -70,6 +77,20 @@ const Message_Page = () => {
       if(ClearChat_Choice){
         socketConnection.emit('clear',userId);
       }
+      socketConnection.on("userTyping", (typingUserId) => {
+        if (typingUserId !== user?._id) { // ✅ Exclude current user
+          dispatch(addTypingUser(typingUserId));
+        }
+      });
+    
+      socketConnection.on("stopTyping", (typingUserId) => {
+       dispatch(removeTypingUser(typingUserId))
+      });
+    
+      return () => {
+        socketConnection.off("userTyping");
+        socketConnection.off("stopTyping");
+      };
     }
   },[socketConnection,userId,user])
 
@@ -114,7 +135,8 @@ const Message_Page = () => {
           <h3 className='font-semibold text-lg my-0 text-ellipsis line-clamp-1'>{UserData?.name}</h3>
 
           <p className='-my-2 text-sm'>
-            {UserData.online?<span className='text-primary'>online</span>:<span className='text-slate-400'>offline</span>}
+            {UserData.online ? Typing.length>0 ? <span className='text-primary'>Typing...</span>:<span className='text-primary'>Online</span>
+            :<span className='text-slate-400'>offline</span>}
           </p>
         </div>
       </div>
@@ -127,7 +149,7 @@ const Message_Page = () => {
       </header>
 
       {/* Show all messages here */}
-    <MessagePage_SendMessage openOptions = {openOptions} socketConnection = {socketConnection} userId = {userId} user= {user} allMessages = {allMessages} darkMode = {darkMode}/>
+    <MessagePage_SendMessage openOptions = {openOptions} socketConnection = {socketConnection} userId = {userId} user= {user} allMessages = {allMessages} darkMode = {darkMode} typing={typing} SetTyping = {SetTyping}/>
 
   
  

@@ -1,25 +1,25 @@
 const mongoose = require("mongoose");
 
-// Function to connect MongoDB
-async function Connect_MongoDB() {
-    try {
-        console.log("⏳ Connecting to MongoDB...");
-        await mongoose.connect(process.env.MONGO_URL, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
+//function
+async function Connect_MongoDB(){
+   try {
+    await mongoose.connect(process.env.MONGO_URL)
 
-        console.log("✅ Connected to MongoDB successfully!");
+    const connection = mongoose.connection      //tell status of connection
 
-        // Handle connection errors after successful connection
-        mongoose.connection.on("error", (error) => {
-            console.error("❌ MongoDB Connection Error:", error);
-        });
+    //if connected
+    connection.on('connected',()=>{
+        console.log("connect to DB");
+    })
 
-    } catch (error) {
-        console.error("❌ MongoDB Connection Failed:", error);
-        process.exit(1); // Stop the server if DB connection fails
-    }
+    //else not connected
+    connection.on('error',(error)=>{
+        console.log("Something is wrong in mongoDb",error);
+    })
+
+   } catch (error) {
+    console.log("Something is wrong ",error);
+   }
 }
 
-module.exports = { Connect_MongoDB };
+module.exports = {Connect_MongoDB};

@@ -12,11 +12,13 @@ import { useRef } from 'react';
 import ChatOptions from './ChatOptions';
 import { useSelector } from 'react-redux';
 import { RiEmojiStickerLine } from "react-icons/ri";
-import EmojiPicker from "emoji-picker-react";
+import EmojiPicker, { SkinTonePickerLocation } from "emoji-picker-react";
+import { FaCheck } from "react-icons/fa6";
+import { BiCheckDouble } from "react-icons/bi";
 
-const MessagePage_SendMessage = ({ socketConnection, userId, user, allMessages, openOptions, darkMode }) => {
+const MessagePage_SendMessage = ({ socketConnection, userId, user, allMessages, openOptions, darkMode, typing, SetTyping }) => {
 
-
+  console.log("All Messages", allMessages);
 
   const [OpenImage_Video_Upload, Set_OpenImage_Video_Upload] = useState(false);
 
@@ -115,6 +117,17 @@ const MessagePage_SendMessage = ({ socketConnection, userId, user, allMessages, 
       }
     })
 
+    if (!typing) {
+      SetTyping(true);
+      socketConnection.emit("typing", user?._id); // Replace with actual username
+    }
+
+    // Stop typing after user pauses for a certain time (debounce-like behavior)
+    setTimeout(() => {
+      SetTyping(false);
+      socketConnection.emit("stopTyping", user?._id);
+    }, 2000);
+
   }
 
   const Handle_SubmtButton = (e) => {
@@ -162,32 +175,46 @@ const MessagePage_SendMessage = ({ socketConnection, userId, user, allMessages, 
           {/* Show all messages here */}
           <div ref={CurrentMsg_Ref} className='flex flex-col gap-2 py-2 mx-2'>
             {allMessages &&
-              allMessages.map((msg, index) => {
+              allMessages.map((msg) => {
                 return (
-                  <div className={`p-1 py-1 rounded w-fit max-w-[280px] md:max-w-sm lg:max-w-md  ${user?._id === msg.msgByUserId ? darkMode ? `ml-auto bg-purple-500 text-white` : "ml-auto bg-purple-500" : darkMode ? "text-white bg-gray-500" : "bg-white"}`}
+                  <div
+                    key={msg?._id}
+                    className={`p-2 rounded-lg w-fit max-w-[280px] md:max-w-sm lg:max-w-md 
+                      ${user?._id === msg.msgByUserId ? darkMode ? "ml-auto bg-purple-500 text-white" : "ml-auto bg-purple-500"
+                        : darkMode ? "text-white bg-gray-500" : "bg-white"}`
+                    }
                     style={{ backgroundColor: (user?._id === msg.msgByUserId) && selectedColor }}
                   >
-                    {/* image  */}
-                    <div className='w-full'>
-                      {
-                        msg.image_url &&
-                        <img src={msg.image_url} className='w-full h-full object-scale-down' />
-                      }
-                      {/* video  */}
-                      {
-                        msg?.video_url &&
-                        <video
-                          src={msg?.video_url}
-                          className='w-full h-full object-scale-down'
-                          controls
+                    {/* Image */}
+                    {msg.image_url && (
+                      <img src={msg.image_url} className="w-full h-auto object-scale-down rounded-lg mb-2" />
+                    )}
 
-                        />
-                      }
+                    {/* Video */}
+                    {msg.video_url && (
+                      <video src={msg.video_url} className="w-full h-auto object-scale-down rounded-lg mb-2" controls />
+                    )}
+
+                    {/* Message Text */}
+                    <p className="px-2 text-sm">{msg.text}</p>
+
+                    {/* Timestamp and Status Icons (Right Aligned) */}
+                    <div className="flex items-center justify-end gap-1 text-xs text-gray-300 mt-1">
+                      <span className={`${darkMode ? "text-gray-300" : "text-gray-600"}`}>{moment(msg.createdAt).format("hh:mm A")}</span>
+                      {user?._id === msg.msgByUserId && (
+                        <>
+                          {msg.status === "sent" && <FaCheck color='gray' size={12} />}
+
+                          {msg.status === "delivered" && <BiCheckDouble size={18} />}
+
+                          {msg.status === "seen" && <BiCheckDouble className={`${darkMode ? "text-green-400":"text-blue-500"}`} size={18} />}
+                        </>
+                      )}
+
                     </div>
-                    <p className='px-2'>{msg.text}</p>
-                    <p className='text-xs ml-auto w-fit'>{moment(msg.createdAt).format('hh:mm')}</p>
                   </div>
-                )
+                );
+
               })
             }
           </div>
@@ -263,7 +290,7 @@ const MessagePage_SendMessage = ({ socketConnection, userId, user, allMessages, 
               <div className={`${darkMode ? "bg-gray-500 text-white" : "bg-white"} shadow rounded absolute bottom-14 w-36 p-2`}>
                 <form>
                   {/* Image */}
-                  <label htmlFor="uploadImage" className={`flex items-center p-2 px-3 gap-3 hover:bg-slate-200 cursor-pointer ${darkMode ? "hover:bg-gray-600" : ""} `}>
+                  <label htmlFor="uploadImage" className={`flex items-center p-2 px-3 gap-3 hover:bg-slate-200 cursor-pointer ${darkMode ? "hover:bg-gray-600 hover:text-gray-500" : ""} `}>
                     <div className='text-primary'>
                       <FaImage size={18} />
                     </div>
@@ -271,7 +298,7 @@ const MessagePage_SendMessage = ({ socketConnection, userId, user, allMessages, 
                   </label>
 
                   {/* Video */}
-                  <label htmlFor="uploadVideo" className={`flex items-center p-2 px-3 gap-3 hover:bg-slate-200 cursor-pointer  ${darkMode ? "hover:bg-gray-600" : ""}`}>
+                  <label htmlFor="uploadVideo" className={`flex items-center p-2 px-3 gap-3 hover:bg-slate-200 cursor-pointer  ${darkMode ? "hover:bg-gray-600 hover:text-gray-500" : ""}`}>
                     <div className='text-purple-500'>
                       <FaVideo size={18} />
                     </div>
@@ -299,7 +326,7 @@ const MessagePage_SendMessage = ({ socketConnection, userId, user, allMessages, 
             <div onClick={() => setShowPicker(!showPicker)} className="text-yellow-500 hover:text-yellow-600 my-4 cursor-pointer" >
               <RiEmojiStickerLine size={30} />
             </div>
-            <button type='submit' className={`${darkMode ? "text-blue-400 hover:text-blue-600" : "text-white bg-purple-500"}  w-12 flex items-center justify-center h-3/4 my-2 rounded  transition duration-300 ease-in-out 
+            <button type='submit' className={`text-white bg-purple-500 w-12 flex items-center justify-center h-3/4 my-2 rounded  transition duration-300 ease-in-out 
             hover:scale-105 active:scale-90`}>
               <IoMdSend size={25} />
             </button>

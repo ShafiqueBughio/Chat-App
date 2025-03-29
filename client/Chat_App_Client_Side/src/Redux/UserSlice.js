@@ -19,6 +19,7 @@ const Initialstate = {
     chatOption : false,
     clearChat : false,
     ClearChat_Choice : false,
+    typing : []
 }
 
 const User_Slice = createSlice({
@@ -69,9 +70,17 @@ const User_Slice = createSlice({
         toggleClearChat_Choice : (state)=>{
             state.ClearChat_Choice = !state.ClearChat_Choice
         },
+        addTypingUser: (state, action) => {
+            if (!state.typing.includes(action.payload)) {
+              state.typing.push(action.payload);
+            }
+          },
+          removeTypingUser: (state, action) => {
+            state.typing = state.typing.filter((id) => id !== action.payload);
+          },
     }
 })
 
-export const {SetUser,SetToken,Logout,SetOnlineUser,SetSocketConnection,toggleTheme,changeColor,toggleChatColor,toggleChatOption,toggleClearChat,toggleClearChat_Choice} = User_Slice.actions;
+export const {SetUser,SetToken,Logout,SetOnlineUser,SetSocketConnection,toggleTheme,changeColor,toggleChatColor,toggleChatOption,toggleClearChat,toggleClearChat_Choice, addTypingUser, removeTypingUser} = User_Slice.actions;
 
 export default User_Slice.reducer;

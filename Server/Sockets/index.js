@@ -7,6 +7,7 @@ const { User_Model } = require("../Model/User_Model");
 const { Conversation_Model } = require("../Model/Conversation_Model");
 const { Messages_Model } = require("../Model/Messages_Model");
 const GetConversation = require("../Helpers/GetConversation");
+const sendEmailNotification = require("../Helpers/emailService")
 const mongoose = require("mongoose");
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -19,8 +20,8 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         // origin:"https://chat-app-frontend-eta-flax.vercel.app",
-        origin : "http://localhost:5173",
-        methods: ["POST","GET","DELETE"],
+        origin: "http://localhost:5173",
+        methods: ["POST", "GET", "DELETE"],
         credentials: true,
     }
 })
@@ -52,7 +53,7 @@ io.on("connection", async (socket) => {
         }
 
         const userDetails = await User_Model.findById(userId).select('-password');
-        if(!userDetails) return socket.emit("error", "User not found");    //error purpose
+        if (!userDetails) return socket.emit("error", "User not found");    //error purpose
 
         const Payload = {
             _id: userDetails?._id,
@@ -64,25 +65,25 @@ io.on("connection", async (socket) => {
 
         socket.emit('message_user', Payload);
 
-          //Get previous message 
-          const Get_Conversation = await Conversation_Model.findOne({
-            "$or":[
-                {sender:user?._id,reciver:userId},
-                {sender:userId,reciver:user?._id}
+        //Get previous message 
+        const Get_Conversation = await Conversation_Model.findOne({
+            "$or": [
+                { sender: user?._id, reciver: userId },
+                { sender: userId, reciver: user?._id }
             ]
         }).populate('message').sort({ updatedAt: -1 })
 
-        
-       socket.emit('display messages',Get_Conversation?.message||[]);
+
+        socket.emit('display messages', Get_Conversation?.message || []);
 
     })
 
     socket.on('new message', async (data) => {
-        
+
         if (!isValidObjectId(data.sender) || !isValidObjectId(data.reciever)) {
             return socket.emit("error", "Invalid sender or receiver ID");
         }
-        
+
         //check conversation is available or not 
         let conversation = await Conversation_Model.findOne({
             "$or": [
@@ -106,98 +107,145 @@ io.on("connection", async (socket) => {
             text: data?.text,
             image_url: data?.imageUrl,
             video_url: data?.videoUrl,
-            msgByUserId: data?.msgByUserId  //sender
+            msgByUserId: data?.msgByUserId, //sender
+            status: "sent"
         })
 
         const SaveMessage = await message.save();
 
-        const Update_Conversation_Message = await Conversation_Model.updateOne({_id:conversation?._id},
+        const Update_Conversation_Message = await Conversation_Model.updateOne({ _id: conversation?._id },
             {
-                $push:{message:SaveMessage?._id}
+                $push: { message: SaveMessage?._id }
             })
 
-            //Get Conversation 
-            const Get_Conversation = await Conversation_Model.findOne({
-                "$or":[
-                    {sender:data?.sender,reciver:data?.reciever},
-                    {sender:data?.reciever,reciver:data?.sender}
-                ]
-            }).populate('message').sort({ updatedAt: -1 })
+        // If receiver is online, mark as delivered
+        if (onlineuser.has(data?.reciever)) {
+            await Messages_Model.updateOne(
+                { _id: SaveMessage._id },
+                { $set: { status: "delivered" } }
+            );
 
-            
-            io.to(data?.sender).emit('display messages',Get_Conversation?.message||[])
-            io.to(data?.reciever).emit('display messages',Get_Conversation?.message||[]);
+            SaveMessage.status = "delivered"; // Update status locally
+        }
 
-            //Conversation SHow in sidebar
-            const conversation_SideBar_Sender = await GetConversation(data?.sender);
-            const conversation_SideBar_Reciver = await GetConversation(data?.reciever);
+        //Get Conversation 
+        const Get_Conversation = await Conversation_Model.findOne({
+            "$or": [
+                { sender: data?.sender, reciver: data?.reciever },
+                { sender: data?.reciever, reciver: data?.sender }
+            ]
+        }).populate('message').sort({ updatedAt: -1 })
 
-            io.to(data?.sender).emit('conversation',conversation_SideBar_Sender);
-            io.to(data?.reciever).emit('conversation',conversation_SideBar_Reciver);
-        
+
+        io.to(data?.sender).emit('display messages', Get_Conversation?.message || [])
+        io.to(data?.reciever).emit('display messages', Get_Conversation?.message || []);
+
+        //Conversation SHow in sidebar
+        const conversation_SideBar_Sender = await GetConversation(data?.sender);
+        const conversation_SideBar_Reciver = await GetConversation(data?.reciever);
+
+        io.to(data?.sender).emit('conversation', conversation_SideBar_Sender);
+        io.to(data?.reciever).emit('conversation', conversation_SideBar_Reciver);
+
+        // **Send Email Notification if the receiver is offline**
+        if (!onlineuser.has(data?.reciever)) {
+            const receiver = await User_Model.findById(data?.reciever);
+            const sender = await User_Model.findById(data?.sender);
+
+            if (receiver && sender) {
+                await sendEmailNotification(sender.email, receiver.email, sender.name, data.text, receiver.name);
+            }
+        }
+
 
     })
     // SideBar Message Display 
-    socket.on('sidebar',async(currentUserId)=>{
+    socket.on('sidebar', async (currentUserId) => {
 
         const conversation = await GetConversation(currentUserId);
 
-        socket.emit('conversation',conversation);
+        socket.emit('conversation', conversation);
     })
 
     //Set Unseen Messages
-    socket.on('seen',async(MsgByUserId)=>{
+    socket.on('seen', async (MsgByUserId) => {
         //find conversation
         let conversation = await Conversation_Model.findOne({
-            "$or":[
-                {sender:user?._id,reciver:MsgByUserId},
-                {sender:MsgByUserId,reciver:user?._id}
+            "$or": [
+                { sender: user?._id, reciver: MsgByUserId },
+                { sender: MsgByUserId, reciver: user?._id }
             ]
         })
 
         const ConversationMsg_Id = conversation?.message || [];
-        
+
         const UpdateMessage = await Messages_Model.updateMany(
-            {_id:{"$in" : ConversationMsg_Id},msgByUserId: MsgByUserId},
-            {"$set":{seen:true}}
+            { _id: { "$in": ConversationMsg_Id }, msgByUserId: MsgByUserId },
+            { "$set": { seen: true, status: "seen" } }
         )
 
-         //Conversation SHow in sidebar
-         const conversation_SideBar_Sender_seen = await GetConversation(user?._id?.toString());
-         const conversation_SideBar_Reciver_seen = await GetConversation(MsgByUserId);
+        // Fetch updated messages
+        const Updated_Conversation = await Conversation_Model.findOne({
+            "$or": [
+                { sender: user?._id, reciver: MsgByUserId },
+                { sender: MsgByUserId, reciver: user?._id }
+            ]
+        }).populate('message').sort({ updatedAt: -1 });
 
-         io.to(user?._id?.toString()).emit('conversation',conversation_SideBar_Sender_seen);
-         io.to(MsgByUserId).emit('conversation',conversation_SideBar_Reciver_seen);        
-        
+        // Emit updated messages
+        io.to(user?._id?.toString()).emit('display messages', Updated_Conversation?.message || []);
+        io.to(MsgByUserId).emit('display messages', Updated_Conversation?.message || []);
+
+        //Conversation SHow in sidebar
+        const conversation_SideBar_Sender_seen = await GetConversation(user?._id?.toString());
+        const conversation_SideBar_Reciver_seen = await GetConversation(MsgByUserId);
+
+        io.to(user?._id?.toString()).emit('conversation', conversation_SideBar_Sender_seen);
+        io.to(MsgByUserId).emit('conversation', conversation_SideBar_Reciver_seen);
+
     })
 
-        //clear chat 
-        socket.on('clear',async(MsgByUserId)=>{
-            const conversation  = await Conversation_Model.findOne({
-                '$or':[
-                    {sender:user?._id,reciver:MsgByUserId}
-                    ,{sender:MsgByUserId,reciver:user?._id}
-                ]
-            })
-
-            if(!conversation) return;
-    
-            //deltete conversation 
-            const clearConversation = await Messages_Model.deleteMany({_id:{"$in":conversation?.message}})
-
-            //update both user conversation list 
-            const SenderConversation = await GetConversation(user?._id?.toString());
-            const ReciverConversation = await GetConversation(MsgByUserId);
-
-            io.to(user?._id?.toString()).emit('conversation',SenderConversation);
-            io.to(MsgByUserId).emit('conversation',ReciverConversation);        
+    //clear chat 
+    socket.on('clear', async (MsgByUserId) => {
+        const conversation = await Conversation_Model.findOne({
+            '$or': [
+                { sender: user?._id, reciver: MsgByUserId }
+                , { sender: MsgByUserId, reciver: user?._id }
+            ]
         })
+
+        if (!conversation) return;
+
+        //deltete conversation 
+        const clearConversation = await Messages_Model.deleteMany({ _id: { "$in": conversation?.message } })
+
+        //update both user conversation list 
+        const SenderConversation = await GetConversation(user?._id?.toString());
+        const ReciverConversation = await GetConversation(MsgByUserId);
+
+        io.to(user?._id?.toString()).emit('conversation', SenderConversation);
+        io.to(MsgByUserId).emit('conversation', ReciverConversation);
+    })
 
     //disconnect
     socket.on("disconnect", () => {
         onlineuser.delete(user?._id)
         console.log("user disconnected", socket.id)
     })
+
+    //typing indicator
+    socket.on('typing', (userId) => {
+        if (!userId) {
+            console.log("User ID is undefined when emitting typing event");
+            return;
+        }
+        socket.broadcast.emit("userTyping", userId);
+
+    })
+
+    socket.on("stopTyping", (userId) => {
+        socket.broadcast.emit("stopTyping", userId);
+    });
 })
 
 module.exports = {
