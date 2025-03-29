@@ -56,7 +56,7 @@ const Home = () => {
   useEffect(() => {
 
     fetchUsers();
-  }, [])
+  }, [dispatch,navigate])
 
   //socket conection 
     useEffect(()=>{
@@ -78,7 +78,7 @@ const Home = () => {
     return()=>{
       socketConnection.disconnect()
     }
-    },[])
+    },[dispatch, url])
 
   return (
     <div className='grid lg:grid-cols-[300px,1fr] h-screen max-h-screen'>
