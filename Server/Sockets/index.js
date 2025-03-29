@@ -26,6 +26,14 @@ const io = new Server(server, {
     }
 })
 
+// Manually set CORS headers for Socket.IO connections
+io.engine.on("headers", (headers, req) => {
+    headers["Access-Control-Allow-Origin"] = "https://chat-app-frontend-silk-phi.vercel.app";
+    headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+    headers["Access-Control-Allow-Headers"] = "Origin, X-Requested-With, Content-Type, Accept, Authorization";
+    headers["Access-Control-Allow-Credentials"] = "true";
+});
+
 //online user (object store unique values only)
 const onlineuser = new Set();
 
