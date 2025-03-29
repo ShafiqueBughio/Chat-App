@@ -20,7 +20,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-           origin: "https://chat-app-frontend-silk-phi.vercel.app",
+           origin: ["https://chat-app-frontend-silk-phi.vercel.app"],
     methods: ["POST", "GET", "DELETE"],
         credentials: true,
     }
