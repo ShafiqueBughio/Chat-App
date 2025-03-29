@@ -19,8 +19,7 @@ const app = express();
 const server = http.createServer(app);
 
 const allowedOrigins = [
-    "https://chat-app-frontend-silk-phi.vercel.app",
-    "http://localhost:5173"
+    "https://chat-app-frontend-silk-phi.vercel.app"
 ];
 
 app.use(cors({
