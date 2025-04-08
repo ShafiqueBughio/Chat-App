@@ -20,7 +20,7 @@ const Search_User = ({ onClose }) => {
     const darkMode = useSelector(state=>state?.user?.darkMode);
 
     const Handle_SearchUser = async () => {
-        const URL = `${url}/search-user`
+        const URL = `${url}/searchUser`
         try {
             Setloading(true);
             const response = await axios.post(URL, {
