@@ -19,13 +19,13 @@ user_router.post('/register',Register_User);
 
 user_router.post('/password',Check_Password);
 
-user_router.get('/user-details',User_Details);
+user_router.get('/userDetails',User_Details);
 
 user_router.get('/logout',Logout_user);
 
-user_router.post("/update-user",Update_user_details);
+user_router.post("/updateUser",Update_user_details);
 
-user_router.post("/search-user",Search_User);
+user_router.post("/searchUser",Search_User);
 
 
 
