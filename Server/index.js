@@ -14,7 +14,7 @@ const {app,server} = require("./Sockets/index")
 app.use(cors(
     {
         // origin:process.env.FRONTEND_URL,
-       origin: ["https://chat-app-frontend-silk-phi.vercel.app"],
+       origin: "",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
     }
