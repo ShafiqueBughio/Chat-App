@@ -32,12 +32,16 @@ const Home = () => {
   //fetch users
   const fetchUsers = async () => {
     try {
+<<<<<<< HEAD
       const URL = `${url}/userDetails`
 
       const response = await axios({
         url: URL,
         withCredentials: true
       });
+=======
+     const response = await axios.get(`${url}/userDetails`, { withCredentials: true });
+>>>>>>> 882076697e7d68f35d1fa41ff1c84f9578750edb
 
       //dispatch to redux store
       dispatch(SetUser(response?.data?.data));
@@ -56,7 +60,7 @@ const Home = () => {
   useEffect(() => {
 
     fetchUsers();
-  }, [])
+  }, [dispatch,navigate])
 
   //socket conection 
     useEffect(()=>{
@@ -78,7 +82,7 @@ const Home = () => {
     return()=>{
       socketConnection.disconnect()
     }
-    },[])
+    },[dispatch, url])
 
   return (
     <div className='grid lg:grid-cols-[300px,1fr] h-screen max-h-screen'>
