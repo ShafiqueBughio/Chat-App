@@ -64,7 +64,7 @@ const Edit_UserDetails = ({onClose,user,darkMode}) => {
         e.preventDefault();
         e.stopPropagation();
       
-        const URL =   `${url}/update-user`
+        const URL =   `${url}/updateUser`
       
         try {
           const response = await axios({

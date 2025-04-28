@@ -32,7 +32,7 @@ const Home = () => {
   //fetch users
   const fetchUsers = async () => {
     try {
-      const URL = `${url}/user-details`
+      const URL = `${url}/userDetails`
 
       const response = await axios({
         url: URL,

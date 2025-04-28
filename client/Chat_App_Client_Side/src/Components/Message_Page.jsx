@@ -15,10 +15,6 @@ import ClearChat from './ClearChat';
 import { addTypingUser,removeTypingUser } from '../Redux/UserSlice';
 // import Wallpaper from './Wallpaper';
 
-
-
-
-
 const Message_Page = () => {
 
   const [UserData,SetUserData] = useState({

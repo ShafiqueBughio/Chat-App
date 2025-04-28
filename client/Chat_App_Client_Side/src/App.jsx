@@ -10,7 +10,7 @@ function App() {
 <>
 <div >
   <Toaster/>
- <Outlet/>
+  <Outlet/>  {/*use to navigate on children components */}
 </div>
 </>
   )
