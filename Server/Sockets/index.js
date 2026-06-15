@@ -14,14 +14,26 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 const app = express();
 
-//Socket connection 
+// Apply CORS to all HTTP routes
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+        "https://chat-app-frontend-silk-phi.vercel.app"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+}));
 
+//Socket connection 
 const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-           origin: ["https://chat-app-frontend-silk-phi.vercel.app"],
-    methods: ["POST", "GET", "DELETE"],
+        origin: [
+            "http://localhost:5173",
+            "https://chat-app-frontend-silk-phi.vercel.app"
+        ],
+        methods: ["POST", "GET", "DELETE"],
         credentials: true,
     }
 })
