@@ -9,23 +9,12 @@ const {Connect_MongoDB} = require("./config/MongoDB_Connection")
 const {user_router} = require("./Routes/routes");
 const {app,server} = require("./Sockets/index")
 
-// const app = express();
+// CORS is already configured in Sockets/index.js where the app is created
+// No duplicate cors() call here to avoid override conflicts
 
-app.use(cors(
-    {
-        origin: process.env.FRONTEND_URL || "http://localhost:5173",
-        methods: ["GET", "POST", "PUT", "DELETE"],
-        credentials: true
-    }
-))
-
-// app.get("/",(req,res)=>{
-//   res.send("Hello")
-// })
 app.use(express.json()); // To handle JSON requests
 
 app.use(cookie_parser());
-
 
 app.use(user_router);
 
@@ -34,7 +23,6 @@ const PORT = process.env.PORT || 8080;
 //MongoDb Connection
 Connect_MongoDB().then(()=>{
     console.log("MongoDB Connected");
- 
 })
 
 server.listen(PORT,()=>{
